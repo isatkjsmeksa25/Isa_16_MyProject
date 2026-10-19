@@ -1,0 +1,69 @@
+# ====================================================================
+# CONFIG / CONFIGURATION VS CODE
+# ====================================================================
+.vscode/
+.history/
+*.code-workspace
+
+# ====================================================================
+# PYTHON ENVIRONMENT & CACHE (DISEMPURNAKAN)
+# ====================================================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.poetry/
+.pytest_cache/
+.mypy_cache/
+
+# ====================================================================
+# FILE RAHASIA & KREDENSIAL (SANGAT PENTING AGAR TIDAK BOCOR)
+# ====================================================================
+.env
+.env.local
+.env.*.local
+*.secret
+*.pem
+*.key
+*.cert
+
+# File Kredensial Database / API Sekolah Anda
+python_mysql/Credentials.json
+credentials.json
+config.json
+
+# ====================================================================
+# FILE SISTEM (Penting karena Anda ngoding di HP Android/Browser)
+# ====================================================================
+.DS_Store
+Thumbs.db
+.thumbnails/
+.Trash/
+*.tmp
+*.bak
+
+# ====================================================================
+# ASSET / FONT SEKOLAH
+# ====================================================================
+fonts/
+*.ttf
+*.otf
+*.woff
+*.woff2
+
+# ====================================================================
+# LOG FILES
+# ====================================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
