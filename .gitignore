@@ -1,69 +1,68 @@
-# ====================================================================
-# CONFIG / CONFIGURATION VS CODE
-# ====================================================================
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and build output
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test and type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE and editor
 .vscode/
+.idea/
 .history/
 *.code-workspace
 
-# ====================================================================
-# PYTHON ENVIRONMENT & CACHE (DISEMPURNAKAN)
-# ====================================================================
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-ENV/
-env.bak/
-venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
-.poetry/
-.pytest_cache/
-.mypy_cache/
-
-# ====================================================================
-# FILE RAHASIA & KREDENSIAL (SANGAT PENTING AGAR TIDAK BOCOR)
-# ====================================================================
+# Environment variables and secrets
 .env
-.env.local
-.env.*.local
-*.secret
+.env.*
+!.env.example
 *.pem
 *.key
-*.cert
+*.p12
+*.pfx
+*.secret
 
-# File Kredensial Database / API Sekolah Anda
-python_mysql/Credentials.json
+# Local credentials and private configuration
+Credentials.json
 credentials.json
-config.json
+secrets.json
+config.local.json
 
-# ====================================================================
-# FILE SISTEM (Penting karena Anda ngoding di HP Android/Browser)
-# ====================================================================
-.DS_Store
-Thumbs.db
-.thumbnails/
-.Trash/
+# Logs and temporary files
+*.log
 *.tmp
 *.bak
-
-# ====================================================================
-# ASSET / FONT SEKOLAH
-# ====================================================================
-fonts/
-*.ttf
-*.otf
-*.woff
-*.woff2
-
-# ====================================================================
-# LOG FILES
-# ====================================================================
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Android / Kivy build artifacts
+.buildozer/
+bin/
+.gradle/
+
+# Local database files (if generated during development)
+*.sqlite3
+*.db
