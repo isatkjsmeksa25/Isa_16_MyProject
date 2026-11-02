@@ -13,6 +13,8 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, RoundedRectangle
 
+from recipe_data import RECIPES, required_ingredients
+
 
 # Warna utama MenuKu
 BG = (0.96, 0.95, 0.91, 1)
@@ -22,74 +24,6 @@ GREEN_LIGHT = (0.88, 0.92, 0.85, 1)
 TEXT = (0.17, 0.19, 0.16, 1)
 MUTED = (0.43, 0.45, 0.40, 1)
 BORDER = (0.85, 0.85, 0.80, 1)
-
-
-# Data resep awal. Bahan ditulis dalam bentuk sederhana.
-RECIPES = [
-    {
-        "name": "Nasi Goreng Sederhana",
-        "ingredients": [
-            "nasi", "telur", "bawang putih",
-            "bawang merah", "kecap", "garam"
-        ],
-        "steps": [
-            "Iris bawang putih dan bawang merah.",
-            "Tumis bawang sampai harum.",
-            "Masukkan telur, lalu orak-arik.",
-            "Masukkan nasi, kecap, dan garam.",
-            "Aduk sampai tercampur rata, lalu sajikan."
-        ],
-    },
-    {
-        "name": "Telur Kecap",
-        "ingredients": [
-            "telur", "kecap", "bawang merah",
-            "bawang putih", "garam"
-        ],
-        "steps": [
-            "Goreng telur sampai matang.",
-            "Tumis bawang merah dan bawang putih.",
-            "Tambahkan kecap, sedikit air, dan garam.",
-            "Masukkan telur dan masak sampai bumbu meresap."
-        ],
-    },
-    {
-        "name": "Mi Telur",
-        "ingredients": [
-            "mi", "telur", "bawang putih", "garam"
-        ],
-        "steps": [
-            "Rebus mi sampai matang, lalu tiriskan.",
-            "Tumis bawang putih sampai harum.",
-            "Masukkan telur dan orak-arik.",
-            "Masukkan mi serta bumbu, lalu aduk rata."
-        ],
-    },
-    {
-        "name": "Tumis Kangkung",
-        "ingredients": [
-            "kangkung", "bawang putih",
-            "cabai", "garam", "minyak"
-        ],
-        "steps": [
-            "Petik dan cuci kangkung.",
-            "Iris bawang putih dan cabai.",
-            "Panaskan minyak, lalu tumis bawang dan cabai.",
-            "Masukkan kangkung dan garam.",
-            "Masak sampai kangkung layu dan matang."
-        ],
-    },
-    {
-        "name": "Telur Dadar",
-        "ingredients": ["telur", "garam", "minyak", "bawang merah"],
-        "steps": [
-            "Pecahkan telur ke dalam mangkuk.",
-            "Tambahkan garam dan bawang merah iris.",
-            "Kocok sampai tercampur.",
-            "Goreng dengan minyak panas sampai matang."
-        ],
-    },
-]
 
 
 def normalize(text):
@@ -440,7 +374,7 @@ class MenuKuApp(App):
 
         for recipe in RECIPES:
             recipe_ingredients = {
-                normalize(item) for item in recipe["ingredients"]
+                normalize(item) for item in required_ingredients(recipe)
             }
             matched = available & recipe_ingredients
 
@@ -491,7 +425,7 @@ class MenuKuApp(App):
 
         for recipe in RECIPES:
             recipe_ingredients = {
-                normalize(item) for item in recipe["ingredients"]
+                normalize(item) for item in required_ingredients(recipe)
             }
             matched = available & recipe_ingredients
             if matched:
@@ -522,7 +456,7 @@ class MenuKuApp(App):
 
         available = {normalize(item) for item in self.ingredients}
         required = {
-            normalize(item) for item in recipe["ingredients"]
+            normalize(item) for item in required_ingredients(recipe)
         }
         missing = sorted(required - available)
 
@@ -535,7 +469,7 @@ class MenuKuApp(App):
 
         card.add_widget(self.label(
             f"Bahan cocok: {len(matched)} dari "
-            f"{len(recipe['ingredients'])}",
+            f"{len(required_ingredients(recipe))}",
             size=sp(12),
             color=MUTED,
         ))
@@ -552,7 +486,7 @@ class MenuKuApp(App):
         else:
             card.add_widget(self.label(
                 "Bahan yang diperlukan: "
-                + ", ".join(recipe["ingredients"]),
+                + ", ".join(required_ingredients(recipe)),
                 size=sp(13),
                 color=TEXT,
             ))
