@@ -1,6 +1,7 @@
 import unittest
 
 from recipe_data import RECIPES, required_ingredients
+from tests.legacy_recipe_data import LEGACY_RECIPES
 
 
 class RecipeDataTests(unittest.TestCase):
@@ -77,6 +78,21 @@ class RecipeDataTests(unittest.TestCase):
                 recipe["name"],
             )
             self.assertEqual(len(combined), len(set(combined)), recipe["name"])
+
+    def test_recipes_match_legacy_data(self):
+        self.assertEqual(len(RECIPES), len(LEGACY_RECIPES))
+
+        for current, legacy in zip(RECIPES, LEGACY_RECIPES):
+            current_ingredients = (
+                current["main"] + current["supporting"] + current["optional"]
+            )
+            self.assertEqual(current["name"], legacy["name"])
+            self.assertEqual(
+                current_ingredients,
+                legacy["ingredients"],
+                legacy["name"],
+            )
+            self.assertEqual(current["steps"], legacy["steps"], legacy["name"])
 
 
 if __name__ == "__main__":

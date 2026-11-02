@@ -1,6 +1,5 @@
 
 import random
-import re
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -13,6 +12,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, RoundedRectangle
 
+from ingredients import deduplicate_ingredients, normalize_ingredient
 from recipe_data import RECIPES, required_ingredients
 
 
@@ -24,11 +24,6 @@ GREEN_LIGHT = (0.88, 0.92, 0.85, 1)
 TEXT = (0.17, 0.19, 0.16, 1)
 MUTED = (0.43, 0.45, 0.40, 1)
 BORDER = (0.85, 0.85, 0.80, 1)
-
-
-def normalize(text):
-    """Menyamakan huruf dan spasi agar pencarian lebih mudah."""
-    return re.sub(r"\s+", " ", text.strip().lower())
 
 
 class MenuKuApp(App):
@@ -295,12 +290,9 @@ class MenuKuApp(App):
             if part.strip()
         ]
 
-        for part in parts:
-            normalized = normalize(part)
-            if normalized and normalized not in [
-                normalize(item) for item in self.ingredients
-            ]:
-                self.ingredients.append(part)
+        self.ingredients = deduplicate_ingredients(
+            self.ingredients + parts
+        )
 
         self.ingredient_input.text = ""
         self.render_ingredients()
@@ -369,12 +361,15 @@ class MenuKuApp(App):
             )
             return
 
-        available = {normalize(item) for item in self.ingredients}
+        available = {
+            normalize_ingredient(item) for item in self.ingredients
+        }
         matches = []
 
         for recipe in RECIPES:
             recipe_ingredients = {
-                normalize(item) for item in required_ingredients(recipe)
+                normalize_ingredient(item)
+                for item in required_ingredients(recipe)
             }
             matched = available & recipe_ingredients
 
@@ -420,12 +415,15 @@ class MenuKuApp(App):
             self.render_recipe(recipe, set())
             return
 
-        available = {normalize(item) for item in self.ingredients}
+        available = {
+            normalize_ingredient(item) for item in self.ingredients
+        }
         matches = []
 
         for recipe in RECIPES:
             recipe_ingredients = {
-                normalize(item) for item in required_ingredients(recipe)
+                normalize_ingredient(item)
+                for item in required_ingredients(recipe)
             }
             matched = available & recipe_ingredients
             if matched:
@@ -454,9 +452,12 @@ class MenuKuApp(App):
         card.padding = dp(12)
         card.spacing = dp(7)
 
-        available = {normalize(item) for item in self.ingredients}
+        available = {
+            normalize_ingredient(item) for item in self.ingredients
+        }
         required = {
-            normalize(item) for item in required_ingredients(recipe)
+            normalize_ingredient(item)
+            for item in required_ingredients(recipe)
         }
         missing = sorted(required - available)
 
