@@ -12,7 +12,9 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, RoundedRectangle
 
+from food_safety import ONLY_RISKY_MESSAGE, check_ingredients
 from ingredients import deduplicate_ingredients, normalize_ingredient
+from recommendation import RecipeRecommendation, recommend_recipes
 from recipe_data import RECIPES, required_ingredients
 
 
@@ -194,6 +196,13 @@ class MenuKuApp(App):
             height=dp(22),
         ))
 
+        self.result_warning = self.label(
+            "",
+            size=sp(12),
+            color=MUTED,
+        )
+        self.results_panel.add_widget(self.result_warning)
+
         self.result_body = BoxLayout(
             orientation="vertical",
             spacing=dp(10),
@@ -341,10 +350,23 @@ class MenuKuApp(App):
             dp(205),
         )
 
+        self.update_result_warning()
+
     def remove_ingredient(self, index):
         if 0 <= index < len(self.ingredients):
             self.ingredients.pop(index)
             self.render_ingredients()
+            self.update_result_warning()
+
+            if self.ingredients:
+                self.search_recipes()
+            else:
+                self.current_recipes = []
+                self.result_body.clear_widgets()
+                self.show_message(
+                    "Mulai dari bahan yang ada di dapur. "
+                    "MenuKu akan membantu mencari ide masakan."
+                )
 
     def show_message(self, message):
         self.result_body.clear_widgets()
@@ -354,53 +376,70 @@ class MenuKuApp(App):
             color=MUTED,
         ))
 
+    def safety_warning_text(self, ingredients):
+        report = check_ingredients(ingredients)
+
+        if not report.has_risky:
+            return ""
+
+        risky_names = ", ".join(
+            check.ingredient for check in report.risky_checks
+        )
+        group_warnings = []
+        seen_groups = set()
+
+        for check in report.risky_checks:
+            for group in check.groups:
+                if group.id not in seen_groups:
+                    seen_groups.add(group.id)
+                    group_warnings.append(group.warning)
+
+        parts = [f"Bahan berisiko: {risky_names}."]
+
+        if group_warnings:
+            parts.append(" ".join(group_warnings))
+
+        return "\n".join(parts)
+
+    def update_result_warning(self):
+        self.result_warning.text = self.safety_warning_text(
+            self.ingredients
+        )
+
     def search_recipes(self):
         if not self.ingredients:
             self.show_message(
                 "Tambahkan bahan makanan terlebih dahulu."
             )
+            self.update_result_warning()
             return
 
-        available = {
-            normalize_ingredient(item) for item in self.ingredients
-        }
-        matches = []
+        result = recommend_recipes(self.ingredients)
+        self.current_recipes = list(result)
+        self.update_result_warning()
 
-        for recipe in RECIPES:
-            recipe_ingredients = {
-                normalize_ingredient(item)
-                for item in required_ingredients(recipe)
-            }
-            matched = available & recipe_ingredients
-
-            if matched:
-                matches.append((
-                    len(matched),
-                    recipe,
-                    matched,
-                ))
-
-        matches.sort(key=lambda item: item[0], reverse=True)
-        self.current_recipes = [
-            item[1] for item in matches
-        ]
-
-        if not matches:
+        if result.only_risky:
             self.show_message(
-                "Belum ada resep yang cocok dengan bahan tersebut. "
-                "Coba tambahkan telur, nasi, atau mi."
+                result.message or ONLY_RISKY_MESSAGE
+            )
+            return
+
+        if not result:
+            self.show_message(
+                "Belum ada menu yang cocok dengan bahan tersedia. "
+                "Coba tambahkan bahan lain."
             )
             return
 
         self.result_body.clear_widgets()
         self.result_body.add_widget(self.label(
-            f"Ditemukan {len(matches)} ide masakan.",
+            f"Ditemukan {len(result)} ide masakan.",
             size=sp(13),
             color=MUTED,
         ))
 
-        for _, recipe, matched in matches:
-            self.render_recipe(recipe, matched)
+        for recommendation in result:
+            self.render_recipe(recommendation)
 
     def random_menu(self):
         if not self.ingredients:
@@ -412,54 +451,53 @@ class MenuKuApp(App):
                 size=sp(13),
                 color=MUTED,
             ))
-            self.render_recipe(recipe, set())
+            self.render_recipe(RecipeRecommendation(
+                recipe=recipe,
+                matched_main=[],
+                missing_main=list(recipe["main"]),
+                matched_supporting=[],
+                missing_supporting=list(recipe["supporting"]),
+                matched_optional=[],
+                matched_ingredients=[],
+                missing_ingredients=list(recipe["main"]) + list(recipe["supporting"]),
+            ))
             return
 
-        available = {
-            normalize_ingredient(item) for item in self.ingredients
-        }
-        matches = []
+        result = recommend_recipes(self.ingredients)
+        self.update_result_warning()
 
-        for recipe in RECIPES:
-            recipe_ingredients = {
-                normalize_ingredient(item)
-                for item in required_ingredients(recipe)
-            }
-            matched = available & recipe_ingredients
-            if matched:
-                matches.append((recipe, matched))
-
-        if not matches:
+        if result.only_risky:
             self.show_message(
-                "Belum ada menu yang cocok. "
+                result.message or ONLY_RISKY_MESSAGE
+            )
+            return
+
+        if not result:
+            self.show_message(
+                "Belum ada menu yang cocok dengan bahan tersedia. "
                 "Coba tambahkan bahan lain."
             )
             return
 
-        recipe, matched = random.choice(matches)
+        recommendation = random.choice(list(result))
         self.result_body.clear_widgets()
         self.result_body.add_widget(self.label(
             "Pilihan acak untuk hari ini:",
             size=sp(13),
             color=MUTED,
         ))
-        self.render_recipe(recipe, matched)
+        self.render_recipe(recommendation)
 
-    def render_recipe(self, recipe, matched):
+    def render_recipe(self, recommendation):
+        recipe = recommendation.recipe
+        matched = recommendation.matched_ingredients
+        missing = list(recommendation.missing_ingredients)
+
         card = self.panel()
         card.orientation = "vertical"
         card.size_hint_y = None
         card.padding = dp(12)
         card.spacing = dp(7)
-
-        available = {
-            normalize_ingredient(item) for item in self.ingredients
-        }
-        required = {
-            normalize_ingredient(item)
-            for item in required_ingredients(recipe)
-        }
-        missing = sorted(required - available)
 
         card.add_widget(self.label(
             recipe["name"],
@@ -474,6 +512,14 @@ class MenuKuApp(App):
             size=sp(12),
             color=MUTED,
         ))
+
+        if recommendation.matched_optional:
+            card.add_widget(self.label(
+                "Bahan opsional tersedia: "
+                + ", ".join(recommendation.matched_optional),
+                size=sp(13),
+                color=TEXT,
+            ))
 
         if self.ingredients:
             missing_text = (
