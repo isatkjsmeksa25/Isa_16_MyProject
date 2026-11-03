@@ -498,6 +498,7 @@ class MenuKuApp(App):
         card.size_hint_y = None
         card.padding = dp(12)
         card.spacing = dp(7)
+        card.bind(minimum_height=card.setter("height"))
 
         card.add_widget(self.label(
             recipe["name"],
@@ -551,10 +552,6 @@ class MenuKuApp(App):
                 size=sp(13),
                 color=TEXT,
             ))
-
-        card.height = sum(
-            child.height for child in card.children
-        ) + dp(24) + dp(7) * max(0, len(card.children) - 1)
 
         self.result_body.add_widget(card)
 
