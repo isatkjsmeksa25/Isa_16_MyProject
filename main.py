@@ -16,6 +16,7 @@ from food_safety import ONLY_RISKY_MESSAGE, check_ingredients
 from ingredients import deduplicate_ingredients, normalize_ingredient
 from recommendation import RecipeRecommendation, recommend_recipes
 from recipe_data import RECIPES, required_ingredients
+from template_recommendation import recommend_with_fallback
 
 
 # Warna utama MenuKu
@@ -414,7 +415,7 @@ class MenuKuApp(App):
             self.update_result_warning()
             return
 
-        result = recommend_recipes(self.ingredients)
+        result = recommend_with_fallback(self.ingredients)
         self.current_recipes = list(result)
         self.update_result_warning()
 
@@ -432,8 +433,19 @@ class MenuKuApp(App):
             return
 
         self.result_body.clear_widgets()
+
+        if getattr(result, "source", "") == "template":
+            self.result_body.add_widget(self.label(
+                "IDE MASAKAN ALTERNATIF",
+                size=sp(12),
+                color=GREEN,
+                bold=True,
+                height=dp(22),
+            ))
+
         self.result_body.add_widget(self.label(
-            f"Ditemukan {len(result)} ide masakan.",
+            f"Ditemukan {len(result)} ide masakan"
+            f"{' alternatif' if getattr(result, 'source', '') == 'template' else ''}.",
             size=sp(13),
             color=MUTED,
         ))
@@ -463,7 +475,7 @@ class MenuKuApp(App):
             ))
             return
 
-        result = recommend_recipes(self.ingredients)
+        result = recommend_with_fallback(self.ingredients)
         self.update_result_warning()
 
         if result.only_risky:
@@ -481,6 +493,16 @@ class MenuKuApp(App):
 
         recommendation = random.choice(list(result))
         self.result_body.clear_widgets()
+
+        if getattr(result, "source", "") == "template":
+            self.result_body.add_widget(self.label(
+                "IDE MASAKAN ALTERNATIF",
+                size=sp(12),
+                color=GREEN,
+                bold=True,
+                height=dp(22),
+            ))
+
         self.result_body.add_widget(self.label(
             "Pilihan acak untuk hari ini:",
             size=sp(13),
