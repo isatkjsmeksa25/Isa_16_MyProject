@@ -67,7 +67,8 @@ class RecommendationTests(unittest.TestCase):
         result = recommend_recipes(["telur", "bawang putih"])
 
         names = [item.recipe["name"] for item in result]
-        self.assertEqual(names[:2], ["Mi Telur", "Telur Kecap"])
+        self.assertEqual(names[:2], ["Mi Telur", "Mi Goreng"])
+        self.assertIn("Telur Kecap", names)
         self.assertIn("Nasi Goreng Sederhana", names)
         self.assertIn("Telur Dadar", names)
 

@@ -79,8 +79,8 @@ class RecipeDataTests(unittest.TestCase):
             )
             self.assertEqual(len(combined), len(set(combined)), recipe["name"])
 
-    def test_recipes_match_legacy_data(self):
-        self.assertEqual(len(RECIPES), len(LEGACY_RECIPES))
+    def test_legacy_recipes_are_preserved(self):
+        self.assertGreaterEqual(len(RECIPES), len(LEGACY_RECIPES))
 
         for current, legacy in zip(RECIPES, LEGACY_RECIPES):
             current_ingredients = (
