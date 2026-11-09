@@ -4,6 +4,7 @@ import random
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
+from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -216,6 +217,18 @@ class MenuKuApp(App):
         results_scroll = ScrollView(do_scroll_x=False)
         results_scroll.add_widget(self.result_body)
         self.results_panel.add_widget(results_scroll)
+
+        self.detail_button = self.make_button(
+            "Lihat Detail Masakan",
+            GREEN,
+            SURFACE,
+            self.show_current_detail,
+        )
+        self.detail_button.size_hint_y = None
+        self.detail_button.height = dp(0)
+        self.detail_button.disabled = True
+        self.results_panel.add_widget(self.detail_button)
+
         self.content.add_widget(self.results_panel)
 
         root.add_widget(self.content)
@@ -402,6 +415,17 @@ class MenuKuApp(App):
 
         return "\n".join(parts)
 
+    def set_detail_button_visible(self, visible):
+        self.detail_button.disabled = not visible
+        self.detail_button.height = dp(40) if visible else dp(0)
+
+    def show_current_detail(self):
+        if not self.current_recipes:
+            self.show_message("Belum ada resep yang dipilih.")
+            return
+
+        self.show_recipe_detail(self.current_recipes[0])
+
     def update_result_warning(self):
         self.result_warning.text = self.safety_warning_text(
             self.ingredients
@@ -413,19 +437,23 @@ class MenuKuApp(App):
                 "Tambahkan bahan makanan terlebih dahulu."
             )
             self.update_result_warning()
+            self.set_detail_button_visible(False)
             return
 
         result = recommend_with_fallback(self.ingredients)
         self.current_recipes = list(result)
         self.update_result_warning()
+        self.set_detail_button_visible(bool(result))
 
         if result.only_risky:
+            self.set_detail_button_visible(False)
             self.show_message(
                 result.message or ONLY_RISKY_MESSAGE
             )
             return
 
         if not result:
+            self.set_detail_button_visible(False)
             self.show_message(
                 "Belum ada menu yang cocok dengan bahan tersedia. "
                 "Coba tambahkan bahan lain."
@@ -477,14 +505,17 @@ class MenuKuApp(App):
 
         result = recommend_with_fallback(self.ingredients)
         self.update_result_warning()
+        self.set_detail_button_visible(bool(result))
 
         if result.only_risky:
+            self.set_detail_button_visible(False)
             self.show_message(
                 result.message or ONLY_RISKY_MESSAGE
             )
             return
 
         if not result:
+            self.set_detail_button_visible(False)
             self.show_message(
                 "Belum ada menu yang cocok dengan bahan tersedia. "
                 "Coba tambahkan bahan lain."
@@ -519,7 +550,7 @@ class MenuKuApp(App):
         card.orientation = "vertical"
         card.size_hint_y = None
         card.padding = dp(12)
-        card.spacing = dp(7)
+        card.spacing = dp(6)
         card.bind(minimum_height=card.setter("height"))
 
         card.add_widget(self.label(
@@ -561,21 +592,110 @@ class MenuKuApp(App):
                 color=TEXT,
             ))
 
-        card.add_widget(self.label(
+        self.result_body.add_widget(card)
+
+    def show_recipe_detail(self, recommendation):
+        recipe = recommendation.recipe
+        matched = recommendation.matched_ingredients
+        missing = list(recommendation.missing_ingredients)
+
+        content = BoxLayout(
+            orientation="vertical",
+            size_hint_y=None,
+            padding=[dp(16), dp(16), dp(16), dp(12)],
+            spacing=dp(8),
+        )
+        content.bind(minimum_height=content.setter("height"))
+
+        content.add_widget(self.label(
+            recipe["name"],
+            size=sp(20),
+            color=GREEN,
+            bold=True,
+            height=dp(32),
+        ))
+
+        content.add_widget(self.label(
+            "BAHAN TERSEDIA",
+            size=sp(12),
+            color=GREEN,
+            bold=True,
+            height=dp(22),
+        ))
+        available_text = ", ".join(matched) if matched else "Tidak ada"
+        content.add_widget(self.label(
+            available_text,
+            size=sp(13),
+            color=TEXT,
+        ))
+
+        content.add_widget(self.label(
+            "BAHAN YANG KURANG",
+            size=sp(12),
+            color=GREEN,
+            bold=True,
+            height=dp(22),
+        ))
+        missing_text = ", ".join(missing) if missing else "Tidak ada"
+        content.add_widget(self.label(
+            missing_text,
+            size=sp(13),
+            color=TEXT,
+        ))
+
+        if recommendation.matched_optional:
+            content.add_widget(self.label(
+                "BAHAN OPSIONAL",
+                size=sp(12),
+                color=GREEN,
+                bold=True,
+                height=dp(22),
+            ))
+            content.add_widget(self.label(
+                ", ".join(recommendation.matched_optional),
+                size=sp(13),
+                color=TEXT,
+            ))
+
+        content.add_widget(self.label(
             "LANGKAH MEMASAK",
             size=sp(12),
             color=GREEN,
             bold=True,
+            height=dp(22),
         ))
 
         for number, step in enumerate(recipe["steps"], start=1):
-            card.add_widget(self.label(
+            content.add_widget(self.label(
                 f"{number}. {step}",
                 size=sp(13),
                 color=TEXT,
             ))
 
-        self.result_body.add_widget(card)
+        close_button = self.make_button(
+            "Tutup",
+            GREEN,
+            SURFACE,
+            lambda: popup.dismiss(),
+        )
+        close_button.size_hint_y = None
+        close_button.height = dp(40)
+        content.add_widget(close_button)
+
+        scroll = ScrollView(do_scroll_x=False)
+        scroll.add_widget(content)
+
+        popup = Popup(
+            title=recipe["name"],
+            title_color=TEXT,
+            separator_color=GREEN,
+            content=scroll,
+            size_hint=(0.9, 0.9),
+            auto_dismiss=False,
+            background="",
+            background_color=SURFACE,
+        )
+        popup.open()
 
 
 if __name__ == "__main__":
