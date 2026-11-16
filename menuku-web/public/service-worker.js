@@ -1,4 +1,4 @@
-const CACHE_NAME = 'menuku-web-v1';
+const CACHE_NAME = 'menuku-web-v2';
 const ASSETS = [
   '/',
   '/index.html',
