@@ -8,6 +8,7 @@ const elements = {
   addButton: document.getElementById('addButton'),
   searchButton: document.getElementById('searchButton'),
   randomButton: document.getElementById('randomButton'),
+  installButton: document.getElementById('installButton'),
   summary: document.getElementById('ingredientSummary'),
   list: document.getElementById('ingredientList'),
   warning: document.getElementById('warningText'),
@@ -18,6 +19,8 @@ const elements = {
   closeModal: document.getElementById('closeModal'),
   closeModalButton: document.getElementById('closeModalButton'),
 };
+
+let deferredInstallPrompt = null;
 
 function normalizeLocal(text) {
   return text.trim().replace(/\s+/g, ' ').toLowerCase();
@@ -236,6 +239,25 @@ elements.closeModal.addEventListener('click', closeModal);
 elements.closeModalButton.addEventListener('click', closeModal);
 elements.modal.addEventListener('click', (event) => {
   if (event.target === elements.modal) closeModal();
+});
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  elements.installButton.hidden = false;
+});
+
+elements.installButton.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  elements.installButton.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => {
+  elements.installButton.hidden = true;
 });
 
 if ('serviceWorker' in navigator) {
