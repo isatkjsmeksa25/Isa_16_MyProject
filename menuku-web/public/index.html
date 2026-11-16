@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#335c40">
+  <title>MenuKu — Masak apa hari ini?</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="logo">MenuKu</h1>
+    <p class="tagline">Masak apa hari ini?</p>
+    <p class="subtitle">Masukkan bahan yang tersedia, lalu temukan ide masakan.</p>
+  </header>
+
+  <main class="content">
+    <section class="panel input-panel">
+      <h2 class="panel-title">BAHAN YANG TERSEDIA</h2>
+      <div class="input-row">
+        <input id="ingredientInput" type="text" placeholder="Contoh: nasi, telur, bawang putih" aria-label="Bahan">
+        <button id="addButton" class="button button-primary">Tambah</button>
+      </div>
+      <p id="ingredientSummary" class="summary">Belum ada bahan yang ditambahkan.</p>
+    </section>
+
+    <section class="panel selected-panel">
+      <h2 class="panel-title">BAHAN PILIHAN</h2>
+      <ul id="ingredientList" class="ingredient-list"></ul>
+    </section>
+
+    <div class="action-row">
+      <button id="searchButton" class="button button-primary button-wide">Cari Resep</button>
+      <button id="randomButton" class="button button-light button-wide">Menu Acak</button>
+    </div>
+
+    <section class="panel results-panel">
+      <h2 class="panel-title">IDE MASAKAN</h2>
+      <p id="warningText" class="warning"></p>
+      <div id="resultBody" class="result-body"></div>
+    </section>
+  </main>
+
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="detailTitle">Detail Resep</h2>
+        <button id="closeModal" class="modal-close" aria-label="Tutup">×</button>
+      </div>
+      <div id="detailBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button id="closeModalButton" class="button button-primary button-wide">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# MenuKu Web tidak membutuhkan dependensi eksternal.
+# Semua endpoint API dibuat dengan Python standard library.

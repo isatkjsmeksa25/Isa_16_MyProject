@@ -2,61 +2,105 @@
 
 # MenuKu
 
-Aplikasi rekomendasi menu makanan berdasarkan bahan yang tersedia.
+MenuKu adalah aplikasi rekomendasi menu makanan berdasarkan bahan yang tersedia. Aplikasi ini dibuat dengan Python dan Kivy.
 
-MenuKu merupakan proyek aplikasi berbasis Python yang bertujuan membantu pengguna menentukan menu makanan dari bahan-bahan yang dimiliki. Proyek ini dirancang untuk mendukung penggunaan di laptop/PC dan perangkat Android.
-
-> **Status proyek:** Dalam pengembangan.
+> **Status proyek:** Fase pengembangan selesai untuk versi Windows. Android dan iOS memerlukan alat build tambahan.
 
 ## Tujuan
 
-Membantu pengguna menemukan ide masakan tanpa harus bingung menentukan menu setiap hari.
+Membantu pengguna menemukan ide masakan dari bahan-bahan yang ada di dapur.
 
-## Fitur yang Direncanakan
+## Fitur Utama
 
-- Memasukkan daftar bahan makanan yang tersedia.
-- Menampilkan rekomendasi resep berdasarkan bahan yang dimasukkan.
-- Menampilkan bahan yang masih kurang untuk setiap resep.
-- Menampilkan informasi dan langkah-langkah memasak.
-- Memilih rekomendasi menu secara acak.
-- Mendukung penggunaan di laptop/PC dan Android.
-
-Fitur-fitur di atas merupakan target pengembangan dan belum tentu seluruhnya tersedia pada versi saat ini.
+- Memasukkan daftar bahan, termasuk beberapa bahan sekaligus.
+- Normalisasi nama bahan dan alias (`cabe` -> `cabai`, `brambang` -> `bawang merah`, dan lain-lain).
+- Pengecekan keamanan bahan berisiko, misalnya siput, ikan buntal, jamur liar, dan hewan liar.
+- Rekomendasi resep katalog berdasarkan bahan yang tersedia.
+- Rekomendasi alternatif berbasis template jika katalog tidak cocok.
+- Menampilkan bahan yang cocok dan bahan yang kurang.
+- Langkah memasak ditampilkan di popup detail resep.
+- Tombol Menu Acak untuk memilih resep secara acak.
+- Penghapusan bahan dan pembaruan rekomendasi otomatis.
+- Tes otomatis dengan `unittest`.
 
 ## Teknologi
 
-- **Bahasa pemrograman:** Python
-- **Editor:** Visual Studio Code
-- **Framework antarmuka:** Akan ditentukan setelah kebutuhan UI/UX dan kompatibilitas perangkat dipastikan.
+- **Bahasa pemrograman:** Python 3
+- **Framework UI:** Kivy
+- **Pengujian:** `unittest`
+- **Packaging Windows:** PyInstaller
+- **Android:** Buildozer (membutuhkan Linux/WSL)
 
-## Menjalankan Proyek
+## Cara Menjalankan dari Source Code
 
-Pastikan Python sudah terpasang.
+1. Pastikan Python 3 sudah terpasang.
+2. Buat virtual environment:
 
-1. Clone repositori:
-
-   ```bash
-   git clone https://github.com/isatkjsmeksa25/Isa_16_MyProject.git
+   ```powershell
+   python -m venv .venv
    ```
 
-2. Masuk ke folder proyek:
+3. Aktifkan virtual environment:
 
-   ```bash
-   cd Isa_16_MyProject
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
    ```
 
-3. Jalankan program utama:
+4. Instal dependensi:
 
-   ```bash
-   python main.py
+   ```powershell
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
 
-Catatan: perintah menjalankan aplikasi mungkin memerlukan dependensi tambahan setelah framework dan kebutuhan proyek ditetapkan.
+5. Jalankan aplikasi:
 
-## Status Pengembangan
+   ```powershell
+   .\.venv\Scripts\python.exe main.py
+   ```
 
-Proyek ini dikembangkan secara bertahap, mulai dari pemeriksaan fondasi, pemilihan teknologi, implementasi antarmuka, pengembangan fitur, hingga pengujian.
+## Cara Membuat File `.exe` Windows
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install pyinstaller
+.\.venv\Scripts\pyinstaller --noconsole --onefile main.py
+```
+
+Hasilnya tersedia di:
+
+```text
+dist\main.exe
+```
+
+File `.exe` bisa dijalankan tanpa Python terpasang.
+
+## Cara Menjalankan Pengujian
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -t . -v
+```
+
+Saat ini 78 tes lulus.
+
+## Struktur Proyek
+
+```text
+recipe_data.py             # katalog 25 resep
+ingredients.py             # normalisasi dan alias bahan
+food_safety.py             # keamanan bahan berisiko
+recommendation.py          # mesin rekomendasi katalog
+recipe_templates.py        # template alternatif
+template_recommendation.py # rekomendasi fallback berbasis template
+main.py                    # UI Kivy
+tests/                     # unit test
+```
+
+## Batasan
+
+- Versi Windows sudah bisa dijalankan langsung.
+- Android membutuhkan Buildozer dan WSL/Linux.
+- iOS membutuhkan macOS, Xcode, dan Apple Developer account.
+- Rekomendasi bersifat ide masak, bukan jaminan keamanan pangan.
 
 ## Lisensi
 
-Proyek ini menggunakan MIT License. Lihat file [LICENSE](LICENSE) untuk ketentuan lengkapnya.
+Proyek ini menggunakan MIT License. Lihat [LICENSE](LICENSE).
