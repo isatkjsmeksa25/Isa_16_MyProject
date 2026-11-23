@@ -18,6 +18,7 @@ const elements = {
   detailBody: document.getElementById('detailBody'),
   closeModal: document.getElementById('closeModal'),
   closeModalButton: document.getElementById('closeModalButton'),
+  toast: document.getElementById('toast'),
 };
 
 let deferredInstallPrompt = null;
@@ -26,32 +27,76 @@ function normalizeLocal(text) {
   return text.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showToast(message) {
+  elements.toast.textContent = message;
+  elements.toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => {
+    elements.toast.classList.remove('show');
+  }, 1800);
+}
+
+function shakeInput() {
+  elements.input.classList.remove('shake');
+  void elements.input.offsetWidth;
+  elements.input.classList.add('shake');
+}
+
 function addIngredients() {
   const raw = elements.input.value.trim();
   if (!raw) {
     elements.summary.textContent = 'Ketik bahan terlebih dahulu.';
+    shakeInput();
+    showToast('Ketik bahan dulu, ya.');
     return;
   }
 
   const parts = raw.split(',').map((part) => part.trim()).filter(Boolean);
   const existing = new Set(state.ingredients.map(normalizeLocal));
+  let added = 0;
 
   for (const part of parts) {
     const key = normalizeLocal(part);
     if (!existing.has(key)) {
       state.ingredients.push(part);
       existing.add(key);
+      added += 1;
     }
   }
 
   elements.input.value = '';
   renderIngredients();
+
+  if (added > 0) {
+    showToast(`${added} bahan ditambahkan`);
+  } else {
+    showToast('Bahan sudah ada di daftar.');
+  }
 }
 
-function removeIngredient(index) {
+function removeIngredient(index, itemElement) {
+  if (itemElement) {
+    itemElement.classList.add('removing');
+    setTimeout(() => {
+      state.ingredients.splice(index, 1);
+      renderIngredients();
+      showToast('Bahan dihapus');
+      if (state.results.length > 0) {
+        searchRecipes();
+      }
+    }, 160);
+    return;
+  }
+
   state.ingredients.splice(index, 1);
   renderIngredients();
-
+  showToast('Bahan dihapus');
   if (state.results.length > 0) {
     searchRecipes();
   }
@@ -68,6 +113,7 @@ function renderIngredients() {
     state.ingredients.forEach((ingredient, index) => {
       const item = document.createElement('li');
       item.className = 'ingredient-item';
+      item.style.animationDelay = `${index * 30}ms`;
       item.innerHTML = `
         <span>• ${escapeHtml(ingredient)}</span>
         <button class="remove-button" data-index="${index}">Hapus</button>
@@ -77,18 +123,27 @@ function renderIngredients() {
   }
 
   elements.list.querySelectorAll('.remove-button').forEach((button) => {
-    button.addEventListener('click', () => removeIngredient(Number(button.dataset.index)));
+    button.addEventListener('click', () => {
+      const item = button.closest('.ingredient-item');
+      removeIngredient(Number(button.dataset.index), item);
+    });
   });
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 function setWarning(message) {
   elements.warning.textContent = message || '';
+}
+
+function showSkeleton(text) {
+  elements.resultBody.innerHTML = `
+    <p class="summary skeleton-text">${escapeHtml(text)}</p>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  `;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function requestRecommendations() {
@@ -112,24 +167,29 @@ async function searchRecipes() {
     return;
   }
 
+  showSkeleton('Mencari resep yang cocok…');
+
   try {
-    const data = await requestRecommendations();
+    const [data] = await Promise.all([requestRecommendations(), delay(260)]);
     state.results = data.recommendations || [];
     setWarning(data.warnings && data.warnings.join(' '));
 
     if (data.only_risky) {
       elements.resultBody.innerHTML = `<p class="summary">${escapeHtml(data.message || 'Semua bahan yang dimasukkan berisiko.')}</p>`;
+      showToast('Bahan berisiko tidak dipakai');
       return;
     }
 
     if (state.results.length === 0) {
       elements.resultBody.innerHTML = '<p class="summary">Belum ada menu yang cocok dengan bahan tersedia. Coba tambahkan bahan lain.</p>';
+      showToast('Belum ada resep cocok');
       return;
     }
 
     renderResults(data.source === 'template' ? 'IDE MASAKAN ALTERNATIF' : 'IDE MASAKAN');
   } catch (error) {
     elements.resultBody.innerHTML = '<p class="summary">Gagal mengambil rekomendasi. Periksa koneksi atau coba lagi.</p>';
+    showToast('Gagal mengambil data');
   }
 }
 
@@ -140,18 +200,22 @@ async function randomMenu() {
     return;
   }
 
+  showSkeleton('Mengacak menu untuk hari ini…');
+
   try {
-    const data = await requestRecommendations();
+    const [data] = await Promise.all([requestRecommendations(), delay(420)]);
     state.results = data.recommendations || [];
     setWarning(data.warnings && data.warnings.join(' '));
 
     if (data.only_risky) {
       elements.resultBody.innerHTML = `<p class="summary">${escapeHtml(data.message || 'Semua bahan yang dimasukkan berisiko.')}</p>`;
+      showToast('Bahan berisiko tidak dipakai');
       return;
     }
 
     if (state.results.length === 0) {
       elements.resultBody.innerHTML = '<p class="summary">Belum ada menu yang cocok dengan bahan tersedia. Coba tambahkan bahan lain.</p>';
+      showToast('Belum ada resep cocok');
       return;
     }
 
@@ -159,6 +223,7 @@ async function randomMenu() {
     renderResults('PILIHAN ACAK UNTUK HARI INI', choice);
   } catch (error) {
     elements.resultBody.innerHTML = '<p class="summary">Gagal mengambil rekomendasi. Periksa koneksi atau coba lagi.</p>';
+    showToast('Gagal mengambil data');
   }
 }
 
@@ -167,9 +232,10 @@ function renderResults(title, single) {
 
   const items = single ? [single] : state.results;
 
-  for (const rec of items) {
+  items.forEach((rec, index) => {
     const card = document.createElement('article');
     card.className = 'result-card';
+    card.style.animationDelay = `${index * 55}ms`;
 
     const missing = rec.missing_ingredients.length > 0
       ? `Bahan yang kurang: ${escapeHtml(rec.missing_ingredients.join(', '))}`
@@ -189,7 +255,7 @@ function renderResults(title, single) {
 
     card.querySelector('.open-detail').addEventListener('click', () => openDetail(rec));
     elements.resultBody.appendChild(card);
-  }
+  });
 }
 
 function openDetail(rec) {
@@ -251,7 +317,7 @@ elements.installButton.addEventListener('click', async () => {
   if (!deferredInstallPrompt) return;
 
   deferredInstallPrompt.prompt();
-  const choice = await deferredInstallPrompt.userChoice;
+  await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;
   elements.installButton.hidden = true;
 });
